@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Joguinho de Heróis • OO em JavaScript</title>
+  <style>
+    :root{
+      --bg: #0b0d10;
+      --panel: #11151a;
+      --muted: #9aa4b2;
+      --text: #e6edf3;
+      --brand: #7c5cff;
+      --brand-2:#2dd4bf;
+      --ok: #16a34a;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --ring: 0 0 0 3px rgba(124,92,255,.25);
+      --radius: 16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.40);
+      --shadow-sm: 0 4px 18px rgba(0,0,0,.30);
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg: #f6f7fb;
+        --panel: #ffffff;
+        --text: #101828;
+        --muted:#667085;
+        --shadow: 0 10px 30px rgba(16,24,40,.10);
+        --shadow-sm: 0 4px 18px rgba(16,24,40,.08);
+      }
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(124,92,255,.15), transparent 60%) ,
+                  radial-gradient(800px 500px at -10% 80%, rgba(45,212,191,.12), transparent 60%) ,
+                  var(--bg);
+      color:var(--text);
+      display:flex; align-items:stretch; justify-content:center;
+      padding:32px;
+    }
+
+    .app{
+      width:min(1100px, 100%);
+      display:grid; gap:20px;
+      grid-template-columns: 1.1fr .9fr;
+    }
+    @media (max-width: 960px){
+      .app{grid-template-columns: 1fr}
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)) , var(--panel);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:clip;
+    }
+    .card-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .title{font-weight:700; letter-spacing:.2px}
+    .subtitle{color:var(--muted); font-size:.92rem}
+
+    .content{padding:20px}
+
+    /* Form */
+    .grid{display:grid; gap:14px; grid-template-columns: 1fr 1fr 1fr}
+    .grid .col-span-2{grid-column: span 2}
+    @media (max-width: 720px){
+      .grid{grid-template-columns: 1fr}
+      .grid .col-span-2{grid-column: auto}
+    }
+
+    label{display:block; font-size:.92rem; color:var(--muted); margin:0 0 6px 2px}
+    input[type="text"], input[type="number"], select, button{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03); color:var(--text);
+      outline:none; transition: box-shadow .15s ease, transform .02s ease, border-color .15s ease;
+    }
+    input::placeholder{color: #8b95a1}
+    input:focus, select:focus{ box-shadow: var(--ring); border-color: rgba(124,92,255,.65) }
+    button{
+      background: linear-gradient(180deg, rgba(124,92,255,.18), rgba(124,92,255,.10));
+      border:1px solid rgba(124,92,255,.45);
+      font-weight:700; cursor:pointer;
+    }
+    button:hover{transform: translateY(-1px)}
+    .btn-row{display:flex; gap:10px; margin-top:8px}
+    .btn-secondary{
+      background: linear-gradient(180deg, rgba(45,212,191,.16), rgba(45,212,191,.08));
+      border:1px solid rgba(45,212,191,.45);
+    }
+    .btn-ghost{
+      background: transparent;
+      border:1px dashed rgba(255,255,255,.18);
+    }
+
+    /* Listagem */
+    .list{display:grid; gap:10px}
+    .hero{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      box-shadow: var(--shadow-sm);
+    }
+    .hero strong{font-weight:800}
+    .tag{
+      font-size:.8rem; padding:4px 8px; border-radius:999px;
+      background: rgba(124,92,255,.15); border:1px solid rgba(124,92,255,.45);
+    }
+    .hero .actions{display:flex; gap:8px}
+    .tiny{
+      font-size:.86rem; color:var(--muted)
+    }
+
+    /* Log */
+    .log{
+      list-style:none; margin:0; padding:0; display:grid; gap:12px;
+    }
+    .log li{
+      padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .attack{font-weight:700}
+    .empty{color:var(--muted); text-align:center; padding:24px 8px}
+
+    /* Helpers */
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .pill{font-size:.78rem; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10)}
+    .kbd{
+      display:inline-grid; place-items:center; min-width:22px; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.2);
+      font-family: ui-monospace, Menlo, Consolas, monospace; font-size:.8rem;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+    }
+    .sep{height:1px; background: rgba(255,255,255,.08); margin:14px 0}
+  </style>
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <!-- Coluna esquerda: Formulário e lista -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="title">Crie seu Herói</div>
+          <div class="subtitle">Classe, objetos, funções e laços — do jeitinho que o desafio pede.</div>
+        </div>
+        <span class="pill">Dica: use <span class="kbd">Enter</span> no formulário</span>
+      </div>
+      <div class="content">
+        <form id="form-hero" autocomplete="off" novalidate>
+          <div class="grid">
+            <div>
+              <label for="nome">Nome</label>
+              <input id="nome" name="nome" type="text" placeholder="Ex.: Hendrick" required minlength="2" />
+            </div>
+            <div>
+              <label for="idade">Idade</label>
+              <input id="idade" name="idade" type="number" min="1" max="999" placeholder="Ex.: 30" required />
+            </div>
+            <div>
+              <label for="tipo">Tipo</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">— selecione —</option>
+                <option value="mago">Mago</option>
+                <option value="guerreiro">Guerreiro</option>
+                <option value="monge">Monge</option>
+                <option value="ninja">Ninja</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="submit" id="btn-add">Adicionar herói</button>
+            <button type="button" class="btn-secondary" id="btn-attack-latest">Atacar último</button>
+            <button type="button" class="btn-ghost" id="btn-clear">Limpar tudo</button>
+          </div>
+        </form>
+
+        <div class="sep"></div>
+
+        <div class="row" style="margin-bottom:8px">
+          <div class="title">Heróis criados</div>
+          <span class="tiny" id="count">0 heróis</span>
+        </div>
+        <div id="hero-list" class="list" aria-live="polite">
+          <div class="empty">Nenhum herói ainda. Crie o primeiro ali em cima 👆</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coluna direita: Log de ataques -->
+    <section class="card">
+      <div class="card-header">
+        <div class="title">Log de ataques</div>
+        <span class="pill">Saída exigida: “o {tipo} atacou usando {ataque}”</span>
+      </div>
+      <div class="content">
+        <ul id="log" class="log">
+          <li class="empty">Sem ações por enquanto. Faça um herói atacar para começar ⚔️</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Classe genérica do herói =====
+    class Heroi {
+      constructor(nome, idade, tipo) {
+        this.nome = String(nome || "").trim();
+        this.idade = Number(idade) || 0;
+        this.tipo = String(tipo || "").toLowerCase().trim();
+      }
+
+      atacar() {
+        const ataque = Heroi.mapAtaque(this.tipo);
+        const msg = `o ${this.tipo} atacou usando ${ataque}`;
+        return { ataque, msg };
+      }
+
+      static mapAtaque(tipo){
+        switch (tipo) {
+          case "mago": return "magia";
+          case "guerreiro": return "espada";
+          case "monge": return "artes marciais";
+          case "ninja": return "shuriken";
+          default: return "um ataque desconhecido";
+        }
+      }
+    }
+
+    // ===== Estado da aplicação =====
+    const state = {
+      herois: []   // {id, heroi}
+    };
+
+    // ===== Utilidades de UI =====
+    const el = (sel) => document.querySelector(sel);
+    const listEl = el("#hero-list");
+    const logEl  = el("#log");
+    const countEl = el("#count");
+
+    function updateCount(){
+      const n = state.herois.length;
+      countEl.textContent = n === 0 ? "0 heróis" : n === 1 ? "1 herói" : `${n} heróis`;
+    }
+
+    function renderHeroes(){
+      listEl.innerHTML = "";
+      if(state.herois.length === 0){
+        listEl.innerHTML = `<div class="empty">Nenhum herói ainda. Crie o primeiro ali em cima 👆</div>`;
+        updateCount();
+        return;
+      }
+      state.herois.forEach(({id, heroi}, idx) => {
+        const item = document.createElement("div");
+        item.className = "hero";
+        item.innerHTML = `
+          <div>
+            <div><strong>${escapeHTML(heroi.nome)}</strong> <span class="tiny">• ${heroi.idade} anos</span></div>
+            <div class="tiny">Tipo: <span class="tag">${escapeHTML(heroi.tipo)}</span></div>
+          </div>
+          <div class="actions">
+            <button type="button" data-action="attack" data-id="${id}">Atacar</button>
+            <button type="button" class="btn-secondary" data-action="copy" data-id="${id}">Copiar frase</button>
+            <button type="button" class="btn-ghost" data-action="remove" data-id="${id}">Remover</button>
+          </div>
+        `;
+        listEl.appendChild(item);
+      });
+      updateCount();
+    }
+
+    function renderLog(message){
+      // remove placeholder
+      const first = logEl.querySelector(".empty");
+      if(first) first.remove();
+
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="attack">${escapeHTML(message)}</span>`;
+      logEl.prepend(li);
+    }
+
+    function escapeHTML(str){
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+      }[s]));
+    }
+
+    // ===== Ações =====
+    function addHero({nome, idade, tipo}){
+      const heroi = new Heroi(nome, idade, tipo);
+      const id = cryptoRandomId();
+      state.herois.push({id, heroi});
+      renderHeroes();
+      return id;
+    }
+
+    function attackHeroById(id){
+      const obj = state.herois.find(h => h.id === id);
+      if(!obj) return;
+      const { msg } = obj.heroi.atacar();
+      // mostra também no console, caso o professor rode no devtools
+      console.log(msg);
+      renderLog(msg);
+      return msg;
+    }
+
+    function copyAttackById(id){
+      const obj = state.herois.find(h => h.id === id);
+      if(!obj) return;
+      const { msg } = obj.heroi.atacar();
+      navigator.clipboard?.writeText(msg);
+      renderLog(`(copiado) ${msg}`);
+    }
+
+    function removeHeroById(id){
+      const i = state.herois.findIndex(h => h.id === id);
+      if(i >= 0){
+        state.herois.splice(i,1);
+        renderHeroes();
+      }
+    }
+
+    function clearAll(){
+      state.herois = [];
+      renderHeroes();
+      logEl.innerHTML = `<li class="empty">Sem ações por enquanto. Faça um herói atacar para começar ⚔️</li>`;
+    }
+
+    function cryptoRandomId(){
+      if(window.crypto?.randomUUID) return crypto.randomUUID();
+      return "id-" + Math.random().toString(36).slice(2,9);
+    }
+
+    // ===== Eventos =====
+    el("#form-hero").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nome = el("#nome").value.trim();
+      const idade = parseInt(el("#idade").value, 10);
+      const tipo = el("#tipo").value;
+
+      // validação simples
+      if(!nome || nome.length < 2){
+        alert("Digite um nome válido (mín. 2 caracteres).");
+        el("#nome").focus();
+        return;
+      }
+      if(!Number.isFinite(idade) || idade < 1){
+        alert("Informe uma idade válida (número maior que 0).");
+        el("#idade").focus();
+        return;
+      }
+      if(!tipo){
+        alert("Selecione um tipo de herói.");
+        el("#tipo").focus();
+        return;
+      }
+
+      const id = addHero({nome, idade, tipo});
+      // feedback: já ataca automaticamente após criar
+      const msg = attackHeroById(id);
+      // limpa campos (menos o tipo, para agilizar)
+      el("#nome").value = "";
+      el("#idade").value = "";
+      el("#nome").focus();
+    });
+
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-action]");
+      if(!btn) return;
+      const action = btn.getAttribute("data-action");
+      const id = btn.getAttribute("data-id");
+      if(action === "attack") attackHeroById(id);
+      if(action === "copy")   copyAttackById(id);
+      if(action === "remove") removeHeroById(id);
+    });
+
+    el("#btn-attack-latest").addEventListener("click", () => {
+      const last = state.herois[state.herois.length - 1];
+      if(!last){
+        alert("Crie um herói primeiro para atacar!");
+        return;
+      }
+      attackHeroById(last.id);
+    });
+
+    el("#btn-clear").addEventListener("click", () => {
+      if(confirm("Tem certeza que deseja limpar todos os heróis e o log?")) clearAll();
+    });
+
+    // ===== Seed opcional (apenas para demonstração) =====
+    (function seed(){
+      const samples = [
+        {nome:"Merlin", idade:200, tipo:"mago"},
+        {nome:"Brienne", idade:32, tipo:"guerreiro"},
+        {nome:"Liang", idade:41, tipo:"monge"},
+        {nome:"Hattori", idade:29, tipo:"ninja"},
+      ];
+      samples.forEach(addHero);
+      renderLog("Dica: clique em “Atacar” para ver a saída exigida ✨");
+    })();
+  </script>
+</body>
+</html>
