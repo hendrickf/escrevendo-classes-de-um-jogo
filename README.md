@@ -1,4 +1,4 @@
-![Capa do Projeto - Joguinho de Heróis](https://i.imgur.com/htbWJeW.png)
+![Capa do Projeto - Joguinho de Heróis](https://github.com/hendrickf/escrevendo-classes-de-um-jogo/blob/main/capa-joguinho-de-herois.png)
 
 # ⚔️ Joguinho de Heróis — Orientação a Objetos em JavaScript
 
